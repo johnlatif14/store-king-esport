@@ -1,19 +1,22 @@
 {
-  "name": "pubg-uc-store",
+  "name": "uc",
   "version": "1.0.0",
+  "description": "",
   "main": "server.js",
   "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js"
   },
-  "engines": {
-    "node": "20.x"
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/johnlatif2026/UCPUBG.git"
   },
-  "dependencies": {
-    "better-sqlite3": "^12.1.1",
-    "body-parser": "^1.20.2",
-    "cors": "^2.8.5",
-    "express": "^4.18.2",
-    "express-session": "^1.17.3",
-    "nodemailer": "^6.9.4"
-  }
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/johnlatif2026/UCPUBG/issues"
+  },
+  "homepage": "https://github.com/johnlatif2026/UCPUBG#readme"
 }

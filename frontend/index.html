@@ -44,7 +44,7 @@
     }
 
     .options {
-      display: flex;
+      display:flex;
       flex-wrap: wrap;
       gap: 10px;
     }
@@ -97,39 +97,70 @@
 
     <div class="section-title">اختر عدد الشدات:</div>
     <div id="ucOptions" class="options">
-      <div class="option" data-value="60" data-price="1.2">
-        <img src="uc1.png" alt="60 UC" />
-        60 UC - $1.2
+      <div class="option" data-value="60" data-price="45"">
+        <img src="https://cdn.midasbuy.com/images/apps/pubgm/1599546007887MVeNUtB6.png" alt="60 UC" />
+        60 UC 
+        <br>
+        45 جنيه
       </div>
-      <div class="option" data-value="325" data-price="5.5">
-        <img src="uc2.png" alt="325 UC" />
-        325 UC - $5.5
+      <div class="option" data-value="325" data-price="235">
+        <img src="https://cdn.midasbuy.com/images/apps/pubgm/1599546030876PIvqwGaa.png" alt="325 UC" />
+        325 UC 
+        <br>
+        235 جنيه
       </div>
-      <div class="option" data-value="660" data-price="10">
-        <img src="uc3.png" alt="660 UC" />
-        660 UC - $10
+      <div class="option" data-value="660" data-price="460">
+        <img src="https://cdn.midasbuy.com/images/apps/pubgm/1599546030876PIvqwGaa.png" alt="660 UC" />
+        660 UC - 460 جنيه
       </div>
     </div>
-
+      <div class="option" data-value="325" data-price="">
+        <img src="https://cdn.midasbuy.com/images/apps/pubgm/1599546052747L5gSu7VB.png" alt="1800 UC" />
+        1800 UC 
+        <br>
+        1140 جنيه
+      </div>
+      <div class="option" data-value="3850" data-price="2260"">
+        <img src="https://cdn.midasbuy.com/images/apps/pubgm/1599546061912PLgMlY23.png" alt="60 UC" />
+        3850 UC 
+        <br>
+        2260 جنيه
+      </div>
+      </div>
+      <div class="option" data-value="8100" data-price="4600"">
+        <img src="https://cdn.midasbuy.com/images/apps/pubgm/1599546071746KqkIhrzG.png" alt="8100 UC" />
+        8100 UC 
+        <br>
+        4600 جنيه
+      </div></div>
     <div class="section-title">أو اختر حزمة ازدهار:</div>
     <div id="bundleOptions" class="options">
-      <div class="option" data-value="حزمة 1" data-price="2">
-        <img src="bundle1.png" alt="Bundle 1" />
-        حزمة 1 - $2
+      <div class="option" data-value="حزمة الازدهار الاولى" data-price="50">
+        <img src="https://cdn.midasbuy.com/images/FirstPurchasePack.bacd265b.jpg" alt="حزمة الازدهار الاولى" />
+        <br>
+        حزمة الازدهار الاولى
+        <br>
+        50 جنيه
       </div>
-      <div class="option" data-value="حزمة 2" data-price="4">
-        <img src="bundle2.png" alt="Bundle 2" />
-        حزمة 2 - $4
+      <div class="option" data-value="حزمة الازدهار الثانية" data-price="145">
+        <img src="https://cdn.midasbuy.com/images/UpgradablePack.8b6dc3a7.jpg" alt="حزمة الازدهار الاولى" />
+        <br>
+        حزمة الازدهار الثانية
+        <br>
+        145 جنيه
       </div>
-      <div class="option" data-value="حزمة 3" data-price="6">
-        <img src="bundle3.png" alt="Bundle 3" />
-        حزمة 3 - $6
+      <div class="option" data-value="حزمة الازدهار الثالثة" data-price="240">
+        <img src="https://cdn.midasbuy.com/images/MythicPack.25332821.jpg" alt="حزمة الازدهار الاولى" />
+        <br>
+        حزمة الازدهار الثالثة
+        <br>
+        240 جنيه
       </div>
     </div>
 
     <input type="text" id="transactionId" placeholder="رقم التحويل" required />
     <input type="text" id="totalAmount" placeholder="المبلغ الإجمالي (يحسب تلقائيًا)" readonly />
-    <p style="color: orange; text-align: center;">قم بالتحويل إلى هذا الرقم: <strong>01012345678</strong></p>
+    <p style="color: orange; text-align: center;">قم بالتحويل إلى هذا الرقم: <strong>010216546351</strong></p>
 
     <button type="submit">إرسال الطلب</button>
   </form>
@@ -152,7 +183,7 @@
 
     function updateTotal() {
       const total = (selectedUC?.dataset.price || 0) * 1 + (selectedBundle?.dataset.price || 0) * 1;
-      document.getElementById('totalAmount').value = total ? total + " $" : "";
+      document.getElementById('totalAmount').value = total ? total + " جنيه" : "";
     }
 
     ucOptions.forEach(option => {

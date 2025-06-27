@@ -2,12 +2,12 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const session = require("express-session");
-const Database = require("better-sqlite3");
+const sqlite3 = require("sqlite3").verbose();
 const nodemailer = require("nodemailer");
 const path = require("path");
 
 const app = express();
-const db = new Database("./data.db"); // تزامني
+const db = new sqlite3.Database("./data.db");
 
 app.use(cors({ origin: "http://localhost:5500", credentials: true }));
 app.use(bodyParser.json());

@@ -2,12 +2,12 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const session = require("express-session");
-const sqlite3 = require("better-sqlite3");
+const Database = require("better-sqlite3");
 const nodemailer = require("nodemailer");
-const path = require('path');
+const path = require("path");
 
 const app = express();
-const db = new sqlite3("./data.db");
+const db = new Database("./data.db"); // تزامني
 
 app.use(cors({ origin: "http://localhost:5500", credentials: true }));
 app.use(bodyParser.json());
@@ -20,27 +20,25 @@ app.use(session({
 }));
 
 // إنشاء الجداول
-db.serialize(() => {
-  db.run(`CREATE TABLE IF NOT EXISTS orders (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT,
-    playerId TEXT,
-    email TEXT,
-    type TEXT,
-    ucAmount TEXT,
-    bundle TEXT,
-    totalAmount TEXT,
-    transactionId TEXT,
-    status TEXT DEFAULT 'لم يتم الدفع'
-  )`);
+db.prepare(`CREATE TABLE IF NOT EXISTS orders (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT,
+  playerId TEXT,
+  email TEXT,
+  type TEXT,
+  ucAmount TEXT,
+  bundle TEXT,
+  totalAmount TEXT,
+  transactionId TEXT,
+  status TEXT DEFAULT 'لم يتم الدفع'
+)`).run();
 
-  db.run(`CREATE TABLE IF NOT EXISTS inquiries (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    email TEXT,
-    message TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  )`);
-});
+db.prepare(`CREATE TABLE IF NOT EXISTS inquiries (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  email TEXT,
+  message TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+)`).run();
 
 // إعداد البريد
 const transporter = nodemailer.createTransport({
@@ -54,41 +52,37 @@ const transporter = nodemailer.createTransport({
 // تقديم الطلب
 app.post("/api/order", (req, res) => {
   const { name, playerId, email, type, ucAmount, bundle, totalAmount, transactionId } = req.body;
-  db.run(
-    `INSERT INTO orders (name, playerId, email, type, ucAmount, bundle, totalAmount, transactionId) 
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    [name, playerId, email, type, ucAmount, bundle, totalAmount, transactionId],
-    (err) => {
-      if (err) return res.status(500).json({ message: "حدث خطأ أثناء الحفظ" });
-      res.json({ success: true });
-    }
-  );
+  try {
+    const stmt = db.prepare(`INSERT INTO orders 
+      (name, playerId, email, type, ucAmount, bundle, totalAmount, transactionId) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`);
+    stmt.run(name, playerId, email, type, ucAmount, bundle, totalAmount, transactionId);
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "حدث خطأ أثناء الحفظ" });
+  }
 });
 
 // إرسال استفسار
 app.post("/api/inquiry", async (req, res) => {
   const { email, message } = req.body;
 
-  db.run(
-    `INSERT INTO inquiries (email, message) VALUES (?, ?)`,
-    [email, message],
-    async (err) => {
-      if (err) return res.status(500).json({ message: "حدث خطأ أثناء الحفظ" });
+  try {
+    db.prepare(`INSERT INTO inquiries (email, message) VALUES (?, ?)`).run(email, message);
 
-      try {
-        await transporter.sendMail({
-          from: process.env.SMTP_USER,
-          to: process.env.SMTP_USER,
-          subject: "استفسار جديد من العميل",
-          html: `<p><strong>البريد:</strong> ${email}</p><p><strong>الرسالة:</strong> ${message}</p>`,
-        });
-        res.json({ success: true });
-      } catch (error) {
-        console.error("خطأ في nodemailer:", error);
-        res.status(500).json({ message: "فشل إرسال البريد الإلكتروني" });
-      }
-    }
-  );
+    await transporter.sendMail({
+      from: process.env.SMTP_USER,
+      to: process.env.SMTP_USER,
+      subject: "استفسار جديد من العميل",
+      html: `<p><strong>البريد:</strong> ${email}</p><p><strong>الرسالة:</strong> ${message}</p>`,
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error("خطأ في nodemailer:", error);
+    res.status(500).json({ message: "فشل إرسال البريد الإلكتروني" });
+  }
 });
 
 // تسجيل دخول المدير
@@ -105,7 +99,6 @@ app.post('/api/admin/login', (req, res) => {
   }
 });
 
-// تسجيل خروج
 app.post("/api/admin/logout", (req, res) => {
   req.session.destroy();
   res.json({ success: true });
@@ -114,49 +107,59 @@ app.post("/api/admin/logout", (req, res) => {
 // عرض الطلبات
 app.get("/api/admin/orders", (req, res) => {
   if (!req.session.admin) return res.status(403).json({ message: "غير مصرح" });
-  db.all("SELECT * FROM orders ORDER BY id DESC", [], (err, rows) => {
-    if (err) return res.status(500).json({ message: "خطأ في قاعدة البيانات" });
+  try {
+    const rows = db.prepare("SELECT * FROM orders ORDER BY id DESC").all();
     res.json(rows);
-  });
+  } catch (err) {
+    res.status(500).json({ message: "خطأ في قاعدة البيانات" });
+  }
 });
 
 // عرض الاستفسارات
 app.get("/api/admin/inquiries", (req, res) => {
   if (!req.session.admin) return res.status(403).json({ message: "غير مصرح" });
-  db.all("SELECT * FROM inquiries ORDER BY created_at DESC", [], (err, rows) => {
-    if (err) return res.status(500).json({ message: "خطأ في قاعدة البيانات" });
+  try {
+    const rows = db.prepare("SELECT * FROM inquiries ORDER BY created_at DESC").all();
     res.json(rows);
-  });
+  } catch (err) {
+    res.status(500).json({ message: "خطأ في قاعدة البيانات" });
+  }
 });
 
 // تحديث حالة الدفع
 app.post("/api/admin/update-status", (req, res) => {
   if (!req.session.admin) return res.status(403).json({ message: "غير مصرح" });
   const { id, status } = req.body;
-  db.run("UPDATE orders SET status = ? WHERE id = ?", [status, id], (err) => {
-    if (err) return res.status(500).json({ message: "حدث خطأ أثناء التحديث" });
+  try {
+    db.prepare("UPDATE orders SET status = ? WHERE id = ?").run(status, id);
     res.json({ success: true });
-  });
+  } catch (err) {
+    res.status(500).json({ message: "حدث خطأ أثناء التحديث" });
+  }
 });
 
 // حذف طلب
 app.delete("/api/admin/delete-order", (req, res) => {
   if (!req.session.admin) return res.status(403).json({ message: "غير مصرح" });
   const { id } = req.body;
-  db.run("DELETE FROM orders WHERE id = ?", [id], (err) => {
-    if (err) return res.status(500).json({ message: "حدث خطأ أثناء الحذف" });
+  try {
+    db.prepare("DELETE FROM orders WHERE id = ?").run(id);
     res.json({ success: true });
-  });
+  } catch (err) {
+    res.status(500).json({ message: "حدث خطأ أثناء الحذف" });
+  }
 });
 
 // حذف استفسار
 app.delete("/api/admin/delete-inquiry", (req, res) => {
   if (!req.session.admin) return res.status(403).json({ message: "غير مصرح" });
   const { id } = req.body;
-  db.run("DELETE FROM inquiries WHERE id = ?", [id], (err) => {
-    if (err) return res.status(500).json({ message: "حدث خطأ أثناء الحذف" });
+  try {
+    db.prepare("DELETE FROM inquiries WHERE id = ?").run(id);
     res.json({ success: true });
-  });
+  } catch (err) {
+    res.status(500).json({ message: "حدث خطأ أثناء الحذف" });
+  }
 });
 
 // تشغيل السيرفر

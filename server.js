@@ -5,13 +5,19 @@ const session = require("express-session");
 const sqlite3 = require("sqlite3").verbose();
 const nodemailer = require("nodemailer");
 const path = require("path");
+require('dotenv').config(); // تحميل متغيرات البيئة
 
 const app = express();
 const db = new sqlite3.Database("./data.db");
 
+// إعدادات الميدل وير
 app.use(cors({ origin: "http://localhost:5500", credentials: true }));
 app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname, '../frontend')));
+app.use(express.static(path.join(__dirname, 'frontend')));
+
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
+});
 
 app.use(session({
   secret: 'your-secret-key',
@@ -40,7 +46,7 @@ db.prepare(`CREATE TABLE IF NOT EXISTS inquiries (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 )`).run();
 
-// إعداد البريد
+// إعداد البريد الإلكتروني
 const transporter = nodemailer.createTransport({
   service: process.env.SMTP_SERVICE,
   auth: {
@@ -49,14 +55,14 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// تقديم الطلب
+// API: تقديم طلب
 app.post("/api/order", (req, res) => {
-  const { name, playerId, email, type, ucAmount, bundle, totalAmount, transactionId } = req.body;
+  const { name, playerId, email, ucAmount, bundle, totalAmount, transactionId } = req.body;
   try {
     const stmt = db.prepare(`INSERT INTO orders 
-      (name, playerId, email, type, ucAmount, bundle, totalAmount, transactionId) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`);
-    stmt.run(name, playerId, email, type, ucAmount, bundle, totalAmount, transactionId);
+      (name, playerId, email, ucAmount, bundle, totalAmount, transactionId) 
+      VALUES (?, ?, ?, ?, ?, ?, ?)`);
+    stmt.run(name, playerId, email, ucAmount, bundle, totalAmount, transactionId);
     res.json({ success: true });
   } catch (err) {
     console.error(err);
@@ -64,7 +70,7 @@ app.post("/api/order", (req, res) => {
   }
 });
 
-// إرسال استفسار
+// API: إرسال استفسار
 app.post("/api/inquiry", async (req, res) => {
   const { email, message } = req.body;
 
@@ -95,7 +101,7 @@ app.post('/api/admin/login', (req, res) => {
     req.session.admin = true;
     res.json({ success: true });
   } else {
-    res.json({ success: false, message: 'Invalid credentials' });
+    res.json({ success: false, message: 'بيانات الدخول غير صحيحة' });
   }
 });
 
@@ -104,7 +110,7 @@ app.post("/api/admin/logout", (req, res) => {
   res.json({ success: true });
 });
 
-// عرض الطلبات
+// جلب الطلبات
 app.get("/api/admin/orders", (req, res) => {
   if (!req.session.admin) return res.status(403).json({ message: "غير مصرح" });
   try {
@@ -115,7 +121,7 @@ app.get("/api/admin/orders", (req, res) => {
   }
 });
 
-// عرض الاستفسارات
+// جلب الاستفسارات
 app.get("/api/admin/inquiries", (req, res) => {
   if (!req.session.admin) return res.status(403).json({ message: "غير مصرح" });
   try {
@@ -126,7 +132,7 @@ app.get("/api/admin/inquiries", (req, res) => {
   }
 });
 
-// تحديث حالة الدفع
+// تحديث حالة الطلب
 app.post("/api/admin/update-status", (req, res) => {
   if (!req.session.admin) return res.status(403).json({ message: "غير مصرح" });
   const { id, status } = req.body;
@@ -138,7 +144,7 @@ app.post("/api/admin/update-status", (req, res) => {
   }
 });
 
-// حذف طلب
+// حذف الطلب
 app.delete("/api/admin/delete-order", (req, res) => {
   if (!req.session.admin) return res.status(403).json({ message: "غير مصرح" });
   const { id } = req.body;

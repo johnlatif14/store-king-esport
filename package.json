@@ -18,5 +18,14 @@
   "bugs": {
     "url": "https://github.com/johnlatif2026/UCPUBG/issues"
   },
-  "homepage": "https://github.com/johnlatif2026/UCPUBG#readme"
+  "homepage": "https://github.com/johnlatif2026/UCPUBG#readme",
+  "dependencies": {
+    "body-parser": "^2.2.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^5.1.0",
+    "express-session": "^1.18.1",
+    "nodemailer": "^7.0.3",
+    "sqlite3": "^5.1.7"
+  }
 }

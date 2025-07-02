@@ -183,97 +183,64 @@
     }
   </style>
 </head>
-<body>
-  <h2>لوحة التحكم</h2>
-  <button class="logout-btn" onclick="logout()">تسجيل الخروج</button>
-
-  <div class="tab-container">
-    <button class="tab-btn active" onclick="openTab('ordersTab')">طلبات الشحن</button>
-    <button class="tab-btn" onclick="openTab('inquiriesTab')">الاستفسارات</button>
-    <button class="tab-btn" onclick="openTab('messagesTab')">إرسال رسائل</button>
-  </div>
-
-  <div id="ordersTab" class="tab-content active">
-    <div id="ordersList"></div>
-  </div>
-
-  <div id="inquiriesTab" class="tab-content">
-    <div id="inquiriesList"></div>
-  </div>
-
-  <div id="messagesTab" class="tab-content">
-    <div class="email-form" style="max-width: 900px; margin: 0 auto; background: #1e1e1e; padding: 20px; border-radius: 8px;">
-      <div style="margin-bottom: 15px;">
-        <label style="display: block; margin-bottom: 5px; color: #ffa726;">البريد الإلكتروني:</label>
-        <input type="email" id="clientEmail" style="width: 100%; padding: 10px; background: #2a2a2a; color: white; border: 1px solid #444; border-radius: 5px;">
-      </div>
-      <div style="margin-bottom: 15px;">
-        <label style="display: block; margin-bottom: 5px; color: #ffa726;">عنوان الرسالة:</label>
-        <input type="text" id="emailSubject" style="width: 100%; padding: 10px; background: #2a2a2a; color: white; border: 1px solid #444; border-radius: 5px;">
-      </div>
-      <div style="margin-bottom: 15px;">
-        <label style="display: block; margin-bottom: 5px; color: #ffa726;">نص الرسالة:</label>
-        <textarea id="emailMessage" style="width: 100%; min-height: 150px; padding: 10px; background: #2a2a2a; color: white; border: 1px solid #444; border-radius: 5px;"></textarea>
-      </div>
-      <button class="paid" onclick="sendDirectMessage()" style="padding: 10px 20px;">إرسال الرسالة</button>
-    </div>
-  </div>
-
-  <div id="replyModal" class="reply-modal">
-    <div class="reply-content">
-      <h3>رد على الاستفسار</h3>
-      <p id="originalMessage"></p>
-      <textarea id="replyText" placeholder="اكتب ردك هنا..."></textarea>
-      <div class="reply-buttons">
-        <button class="paid" onclick="sendReply()">إرسال الرد</button>
-        <button class="delete-btn" onclick="closeReplyModal()">إلغاء</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="screenshotModal" onclick="this.style.display='none'">
-    <img id="modalImage">
-  </div>
-
-  <script>
+ <script>
     let currentInquiryId = null;
     let currentInquiryEmail = null;
     let currentInquiryMessage = null;
 
     async function loadOrders() {
-      const res = await fetch("https://store-king-esport-production-9362.up.railway.app/api/admin/orders", {
-        credentials: "include"
-      });
-      const orders = await res.json();
-      const container = document.getElementById("ordersList");
-      container.innerHTML = "";
+      try {
+        const res = await fetch("https://store-king-esport-production-9362.up.railway.app/api/admin/orders", {
+          credentials: "include"
+        });
+        
+        if (!res.ok) {
+          throw new Error('Failed to fetch orders');
+        }
+        
+        const data = await res.json();
+        if (!data.success) {
+          throw new Error(data.message || 'Failed to load orders');
+        }
+        
+        const orders = data.data;
+        const container = document.getElementById("ordersList");
+        container.innerHTML = "";
 
-      orders.forEach(order => {
-        const div = document.createElement("div");
-        div.classList.add("order");
-        div.innerHTML = `
-          <p><strong>الاسم:</strong> ${order.name}</p>
-          <p><strong>ID اللاعب:</strong> ${order.playerId}</p>
-          <p><strong>البريد:</strong> ${order.email}</p>
-          <p><strong>النوع:</strong> ${order.type}</p>
-          <p><strong>الكمية:</strong> ${order.ucAmount || order.bundle}</p>
-          <p><strong>المبلغ:</strong> ${order.totalAmount}</p>
-          <p><strong>رقم التحويل:</strong> ${order.transactionId}</p>
-          ${order.screenshot ? `
-            <p><strong>إثبات الدفع:</strong></p>
-            <img src="${order.screenshot}" 
-                 onclick="openScreenshotModal('${order.screenshot}')"
-                 class="screenshot-thumbnail">
-          ` : ''}
-          <p class="status"><strong>الحالة:</strong> ${order.status}</p>
-          <button class="${order.status === 'تم الدفع' ? 'paid' : 'not-paid'}" 
-                  onclick="updateStatus(${order.id}, '${order.status === 'تم الدفع' ? 'لم يتم الدفع' : 'تم الدفع'}')">
-            ${order.status === 'تم الدفع' ? 'تم الدفع' : 'لم يتم الدفع'}
-          </button>
-          <button class="delete-btn" onclick="deleteOrder(${order.id})">حذف</button>
-        `;
-        container.appendChild(div);
-      });
+        if (!orders || !Array.isArray(orders)) {
+          throw new Error('Invalid orders data');
+        }
+
+        orders.forEach(order => {
+          const div = document.createElement("div");
+          div.classList.add("order");
+          div.innerHTML = `
+            <p><strong>الاسم:</strong> ${order.name}</p>
+            <p><strong>ID اللاعب:</strong> ${order.playerId}</p>
+            <p><strong>البريد:</strong> ${order.email}</p>
+            <p><strong>النوع:</strong> ${order.type}</p>
+            <p><strong>الكمية:</strong> ${order.ucAmount || order.bundle}</p>
+            <p><strong>المبلغ:</strong> ${order.totalAmount}</p>
+            <p><strong>رقم التحويل:</strong> ${order.transactionId}</p>
+            ${order.screenshot ? `
+              <p><strong>إثبات الدفع:</strong></p>
+              <img src="${order.screenshot}" 
+                   onclick="openScreenshotModal('${order.screenshot}')"
+                   class="screenshot-thumbnail">
+            ` : ''}
+            <p class="status"><strong>الحالة:</strong> ${order.status}</p>
+            <button class="${order.status === 'تم الدفع' ? 'paid' : 'not-paid'}" 
+                    onclick="updateStatus(${order.id}, '${order.status === 'تم الدفع' ? 'لم يتم الدفع' : 'تم الدفع'}')">
+              ${order.status === 'تم الدفع' ? 'تم الدفع' : 'لم يتم الدفع'}
+            </button>
+            <button class="delete-btn" onclick="deleteOrder(${order.id})">حذف</button>
+          `;
+          container.appendChild(div);
+        });
+      } catch (error) {
+        console.error("Error loading orders:", error);
+        alert("حدث خطأ أثناء تحميل الطلبات: " + error.message);
+      }
     }
 
     function openScreenshotModal(src) {
@@ -282,31 +249,50 @@
     }
 
     async function loadInquiries() {
-      const res = await fetch("https://store-king-esport-production-9362.up.railway.app/api/admin/inquiries", {
-        credentials: "include"
-      });
-      const inquiries = await res.json();
-      const container = document.getElementById("inquiriesList");
-      container.innerHTML = "";
-
-      inquiries.forEach(inquiry => {
-        const div = document.createElement("div");
-        div.classList.add("inquiry");
-        if (inquiry.status === 'تم الرد') {
-          div.classList.add("replied");
+      try {
+        const res = await fetch("https://store-king-esport-production-9362.up.railway.app/api/admin/inquiries", {
+          credentials: "include"
+        });
+        
+        if (!res.ok) {
+          throw new Error('Failed to fetch inquiries');
         }
         
-        div.innerHTML = `
-          <p><strong>البريد:</strong> ${inquiry.email}</p>
-          <p><strong>التاريخ:</strong> ${new Date(inquiry.created_at).toLocaleString()}</p>
-          <p><strong>الرسالة:</strong> ${inquiry.message}</p>
-          <button class="reply-btn" onclick="openReplyModal(${inquiry.id}, '${inquiry.email.replace(/'/g, "\\'")}', '${inquiry.message.replace(/'/g, "\\'").replace(/\n/g, '<br>')}')">
-            ${inquiry.status === 'تم الرد' ? '✉️ إعادة رد' : '✉️ رد'}
-          </button>
-          <button class="delete-btn" onclick="deleteInquiry(${inquiry.id})">🗑️ حذف</button>
-        `;
-        container.appendChild(div);
-      });
+        const data = await res.json();
+        if (!data.success) {
+          throw new Error(data.message || 'Failed to load inquiries');
+        }
+        
+        const inquiries = data.data;
+        const container = document.getElementById("inquiriesList");
+        container.innerHTML = "";
+
+        if (!inquiries || !Array.isArray(inquiries)) {
+          throw new Error('Invalid inquiries data');
+        }
+
+        inquiries.forEach(inquiry => {
+          const div = document.createElement("div");
+          div.classList.add("inquiry");
+          if (inquiry.status === 'تم الرد') {
+            div.classList.add("replied");
+          }
+          
+          div.innerHTML = `
+            <p><strong>البريد:</strong> ${inquiry.email}</p>
+            <p><strong>التاريخ:</strong> ${new Date(inquiry.created_at).toLocaleString()}</p>
+            <p><strong>الرسالة:</strong> ${inquiry.message}</p>
+            <button class="reply-btn" onclick="openReplyModal(${inquiry.id}, '${inquiry.email.replace(/'/g, "\\'")}', '${inquiry.message.replace(/'/g, "\\'").replace(/\n/g, '<br>')}')">
+              ${inquiry.status === 'تم الرد' ? '✉️ إعادة رد' : '✉️ رد'}
+            </button>
+            <button class="delete-btn" onclick="deleteInquiry(${inquiry.id})">🗑️ حذف</button>
+          `;
+          container.appendChild(div);
+        });
+      } catch (error) {
+        console.error("Error loading inquiries:", error);
+        alert("حدث خطأ أثناء تحميل الاستفسارات: " + error.message);
+      }
     }
 
     function openReplyModal(id, email, message) {
@@ -352,11 +338,11 @@
           closeReplyModal();
           loadInquiries();
         } else {
-          alert("حدث خطأ: " + (result.message || "فشل إرسال الرد"));
+          throw new Error(result.message || "فشل إرسال الرد");
         }
       } catch (error) {
         console.error("Error:", error);
-        alert("حدث خطأ أثناء محاولة الإرسال");
+        alert("حدث خطأ أثناء محاولة الإرسال: " + error.message);
       }
     }
 
@@ -389,45 +375,75 @@
           document.getElementById("emailSubject").value = "";
           document.getElementById("emailMessage").value = "";
         } else {
-          alert("حدث خطأ: " + (result.message || "فشل إرسال الرسالة"));
+          throw new Error(result.message || "فشل إرسال الرسالة");
         }
       } catch (error) {
         console.error("Error:", error);
-        alert("حدث خطأ أثناء محاولة الإرسال");
+        alert("حدث خطأ أثناء محاولة الإرسال: " + error.message);
       }
     }
 
     async function updateStatus(id, status) {
-      await fetch("https://store-king-esport-production-9362.up.railway.app/api/admin/update-status", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ id, status })
-      });
-      loadOrders();
+      try {
+        const res = await fetch("https://store-king-esport-production-9362.up.railway.app/api/admin/update-status", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ id, status })
+        });
+        
+        if (!res.ok) {
+          throw new Error('Failed to update status');
+        }
+        
+        loadOrders();
+      } catch (error) {
+        console.error("Error updating status:", error);
+        alert("حدث خطأ أثناء تحديث الحالة: " + error.message);
+      }
     }
 
     async function deleteOrder(id) {
       if (confirm("هل أنت متأكد من حذف الطلب؟")) {
-        await fetch("https://store-king-esport-production-9362.up.railway.app/api/admin/delete-order", {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ id })
-        });
-        loadOrders();
+        try {
+          const res = await fetch("https://store-king-esport-production-9362.up.railway.app/api/admin/delete-order", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ id })
+          });
+          
+          if (!res.ok) {
+            throw new Error('Failed to delete order');
+          }
+          
+          loadOrders();
+        } catch (error) {
+          console.error("Error deleting order:", error);
+          alert("حدث خطأ أثناء حذف الطلب: " + error.message);
+        }
       }
     }
 
     async function deleteInquiry(id) {
       if (confirm("هل أنت متأكد من حذف هذا الاستفسار؟")) {
-        await fetch("https://store-king-esport-production-9362.up.railway.app/api/admin/delete-inquiry", {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ id })
-        });
-        loadInquiries();
+        try {
+          const res = await fetch("https://store-king-esport-production-9362.up.railway.app/api/admin/delete-inquiry", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ id })
+          });
+          
+          if (!res.ok) {
+            throw new Error('Failed to delete inquiry');
+          }
+          
+          loadInquiries();
+        } catch (error) {
+          console.error("Error deleting inquiry:", error);
+          alert("حدث خطأ أثناء حذف الاستفسار: " + error.message);
+        }
       }
     }
 
@@ -445,11 +461,21 @@
     }
 
     async function logout() {
-      await fetch("https://store-king-esport-production-9362.up.railway.app/api/admin/logout", { 
-        method: "POST",
-        credentials: "include"
-      });
-      window.location.href = "login.html";
+      try {
+        const res = await fetch("https://store-king-esport-production-9362.up.railway.app/api/admin/logout", { 
+          method: "POST",
+          credentials: "include"
+        });
+        
+        if (!res.ok) {
+          throw new Error('Failed to logout');
+        }
+        
+        window.location.href = "login.html";
+      } catch (error) {
+        console.error("Error logging out:", error);
+        alert("حدث خطأ أثناء تسجيل الخروج: " + error.message);
+      }
     }
 
     // تحميل البيانات عند فتح الصفحة

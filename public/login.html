@@ -70,19 +70,18 @@
       const username = document.getElementById("username").value;
       const password = document.getElementById("password").value;
 
-      const res = await fetch("http://localhost:3000/api/admin/login", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  credentials: "include", // ← مهم جدًا
-  body: JSON.stringify({ username, password })
-});
-
+      const res = await fetch("https://store-king-esport-production-9362.up.railway.app/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ username, password })
+      });
 
       const data = await res.json();
       if (data.success) {
         window.location.href = "dashboard.html";
       } else {
-        alert("Login failed");
+        alert("Login failed: " + (data.message || "Invalid credentials"));
       }
     });
   </script>

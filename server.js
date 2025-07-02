@@ -5,6 +5,8 @@ const session = require("express-session");
 const sqlite3 = require("sqlite3").verbose();
 const nodemailer = require("nodemailer");
 const path = require("path");
+const multer = require('multer');
+const fs = require('fs');
 require('dotenv').config();
 
 const app = express();
@@ -20,10 +22,11 @@ const db = new sqlite3.Database("./data.db", sqlite3.OPEN_READWRITE | sqlite3.OP
 
 // إعدادات الميدل وير
 app.use(cors({ 
-  origin: ['http://localhost:3000', 'http://127.0.0.1:3000','https://store-king-esport-production-9362.up.railway.app/'],
+  origin: ['http://localhost:3000', 'http://127.0.0.1:3000', 'https://store-king-esport-production-9362.up.railway.app'],
   credentials: true 
 }));
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // إعداد الجلسة
@@ -39,6 +42,22 @@ app.use(session({
   }
 }));
 
+// إنشاء مجلد uploads إذا لم يكن موجوداً
+if (!fs.existsSync('public/uploads')) {
+  fs.mkdirSync('public/uploads', { recursive: true });
+}
+
+// إعداد multer لرفع الملفات
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'public/uploads/');
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname));
+  }
+});
+const upload = multer({ storage });
+
 // إنشاء الجداول
 db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS orders (
@@ -51,6 +70,7 @@ db.serialize(() => {
     bundle TEXT,
     totalAmount TEXT,
     transactionId TEXT,
+    screenshot TEXT,
     status TEXT DEFAULT 'لم يتم الدفع'
   )`);
 
@@ -89,18 +109,24 @@ app.get("/dashboard", (req, res) => {
 });
 
 // API Routes
-app.post("/api/order", (req, res) => {
+app.post("/api/order", upload.single('screenshot'), (req, res) => {
   const { name, playerId, email, ucAmount, bundle, totalAmount, transactionId } = req.body;
+  
+  if (!name || !playerId || !email || !transactionId || !totalAmount || (!ucAmount && !bundle)) {
+    return res.status(400).json({ success: false, message: "جميع الحقول مطلوبة" });
+  }
+
   const type = ucAmount ? "UC" : "Bundle";
+  const screenshot = req.file ? `/uploads/${req.file.filename}` : null;
   
   db.run(
-    `INSERT INTO orders (name, playerId, email, type, ucAmount, bundle, totalAmount, transactionId) 
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    [name, playerId, email, type, ucAmount, bundle, totalAmount, transactionId],
+    `INSERT INTO orders (name, playerId, email, type, ucAmount, bundle, totalAmount, transactionId, screenshot) 
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [name, playerId, email, type, ucAmount, bundle, totalAmount, transactionId, screenshot],
     function(err) {
       if (err) {
         console.error(err);
-        return res.status(500).json({ message: "حدث خطأ أثناء الحفظ" });
+        return res.status(500).json({ success: false, message: "حدث خطأ أثناء الحفظ" });
       }
       res.json({ success: true, id: this.lastID });
     }
@@ -110,12 +136,16 @@ app.post("/api/order", (req, res) => {
 app.post("/api/inquiry", async (req, res) => {
   const { email, message } = req.body;
   
+  if (!email || !message) {
+    return res.status(400).json({ success: false, message: "البريد والرسالة مطلوبان" });
+  }
+
   try {
     db.run(
       "INSERT INTO inquiries (email, message) VALUES (?, ?)",
       [email, message],
       async function(err) {
-        if (err) throw err;
+        if (err) return res.status(500).json({ success: false, message: "خطأ في قاعدة البيانات" });
         
         await transporter.sendMail({
           from: `"فريق الدعم" <${process.env.SMTP_USER}>`,
@@ -136,7 +166,7 @@ app.post("/api/inquiry", async (req, res) => {
     );
   } catch (error) {
     console.error("Error:", error);
-    res.status(500).json({ message: "فشل إرسال البريد الإلكتروني" });
+    res.status(500).json({ success: false, message: "فشل إرسال البريد الإلكتروني" });
   }
 });
 
@@ -160,40 +190,44 @@ app.post("/api/admin/logout", (req, res) => {
 });
 
 app.get("/api/admin/orders", (req, res) => {
-  if (!req.session.admin) return res.status(403).json({ message: "غير مصرح" });
+  if (!req.session.admin) return res.status(403).json({ success: false, message: "غير مصرح" });
   
   db.all("SELECT * FROM orders ORDER BY id DESC", (err, rows) => {
     if (err) {
       console.error(err);
-      return res.status(500).json({ message: "خطأ في قاعدة البيانات" });
+      return res.status(500).json({ success: false, message: "خطأ في قاعدة البيانات" });
     }
-    res.json(rows);
+    res.json({ success: true, data: rows });
   });
 });
 
 app.get("/api/admin/inquiries", (req, res) => {
-  if (!req.session.admin) return res.status(403).json({ message: "غير مصرح" });
+  if (!req.session.admin) return res.status(403).json({ success: false, message: "غير مصرح" });
   
   db.all("SELECT * FROM inquiries ORDER BY created_at DESC", (err, rows) => {
     if (err) {
       console.error(err);
-      return res.status(500).json({ message: "خطأ في قاعدة البيانات" });
+      return res.status(500).json({ success: false, message: "خطأ في قاعدة البيانات" });
     }
-    res.json(rows);
+    res.json({ success: true, data: rows });
   });
 });
 
 app.post("/api/admin/update-status", (req, res) => {
-  if (!req.session.admin) return res.status(403).json({ message: "غير مصرح" });
+  if (!req.session.admin) return res.status(403).json({ success: false, message: "غير مصرح" });
   
   const { id, status } = req.body;
+  if (!id || !status) {
+    return res.status(400).json({ success: false, message: "معرّف الطلب والحالة مطلوبان" });
+  }
+
   db.run(
     "UPDATE orders SET status = ? WHERE id = ?",
     [status, id],
     function(err) {
       if (err) {
         console.error(err);
-        return res.status(500).json({ message: "حدث خطأ أثناء التحديث" });
+        return res.status(500).json({ success: false, message: "حدث خطأ أثناء التحديث" });
       }
       res.json({ success: true });
     }
@@ -201,36 +235,47 @@ app.post("/api/admin/update-status", (req, res) => {
 });
 
 app.delete("/api/admin/delete-order", (req, res) => {
-  if (!req.session.admin) return res.status(403).json({ message: "غير مصرح" });
+  if (!req.session.admin) return res.status(403).json({ success: false, message: "غير مصرح" });
   
   const { id } = req.body;
+  if (!id) {
+    return res.status(400).json({ success: false, message: "معرّف الطلب مطلوب" });
+  }
+
   db.run("DELETE FROM orders WHERE id = ?", [id], function(err) {
     if (err) {
       console.error(err);
-      return res.status(500).json({ message: "حدث خطأ أثناء الحذف" });
+      return res.status(500).json({ success: false, message: "حدث خطأ أثناء الحذف" });
     }
     res.json({ success: true });
   });
 });
 
 app.delete("/api/admin/delete-inquiry", (req, res) => {
-  if (!req.session.admin) return res.status(403).json({ message: "غير مصرح" });
+  if (!req.session.admin) return res.status(403).json({ success: false, message: "غير مصرح" });
   
   const { id } = req.body;
+  if (!id) {
+    return res.status(400).json({ success: false, message: "معرّف الاستفسار مطلوب" });
+  }
+
   db.run("DELETE FROM inquiries WHERE id = ?", [id], function(err) {
     if (err) {
       console.error(err);
-      return res.status(500).json({ message: "حدث خطأ أثناء الحذف" });
+      return res.status(500).json({ success: false, message: "حدث خطأ أثناء الحذف" });
     }
     res.json({ success: true });
   });
 });
 
 app.post("/api/admin/reply-inquiry", async (req, res) => {
-  if (!req.session.admin) return res.status(403).json({ message: "غير مصرح" });
+  if (!req.session.admin) return res.status(403).json({ success: false, message: "غير مصرح" });
 
   const { inquiryId, email, message, reply } = req.body;
-  
+  if (!inquiryId || !email || !message || !reply) {
+    return res.status(400).json({ success: false, message: "جميع الحقول مطلوبة" });
+  }
+
   try {
     await transporter.sendMail({
       from: `"فريق الدعم" <${process.env.SMTP_USER}>`,
@@ -258,10 +303,13 @@ app.post("/api/admin/reply-inquiry", async (req, res) => {
 });
 
 app.post("/api/admin/send-message", async (req, res) => {
-  if (!req.session.admin) return res.status(403).json({ message: "غير مصرح" });
+  if (!req.session.admin) return res.status(403).json({ success: false, message: "غير مصرح" });
 
   const { email, subject, message } = req.body;
-  
+  if (!email || !subject || !message) {
+    return res.status(400).json({ success: false, message: "جميع الحقول مطلوبة" });
+  }
+
   try {
     await transporter.sendMail({
       from: `"فريق الدعم" <${process.env.SMTP_USER}>`,

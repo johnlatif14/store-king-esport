@@ -52,143 +52,19 @@
       margin-top: 15px;
       cursor: pointer;
     }
-
-    #qrCode {
-      margin: 20px auto;
-    }
-
-    #statusMessage {
-      margin-top: 20px;
-      color: orange;
-    }
   </style>
 </head>
 <body>
   <div class="login-container">
     <h2>Admin Panel Login</h2>
-    <div id="qrSection" style="text-align: center;">
-      <div id="qrCode"></div>
-      <p>أو</p>
-      <button onclick="showManualLogin()">تسجيل الدخول يدوياً</button>
-    </div>
-    
-    <div id="manualLogin" style="display: none;">
-      <form id="loginForm">
-        <input type="text" id="username" placeholder="Username" required />
-        <input type="password" id="password" placeholder="Password" required />
-        <button type="submit">Login</button>
-      </form>
-      <button onclick="showQRLogin()" style="margin-top: 10px;">العودة إلى تسجيل الدخول عبر QR</button>
-    </div>
-    
-    <div id="statusMessage"></div>
+    <form id="loginForm">
+      <input type="text" id="username" placeholder="Username" required />
+      <input type="password" id="password" placeholder="Password" required />
+      <button type="submit">Login</button>
+    </form>
   </div>
 
-  <script src="https://cdn.rawgit.com/davidshimjs/qrcodejs/gh-pages/qrcode.min.js"></script>
   <script>
-    let qrToken = null;
-    let checkInterval = null;
-    
-    function showManualLogin() {
-      document.getElementById('qrSection').style.display = 'none';
-      document.getElementById('manualLogin').style.display = 'block';
-      if (checkInterval) clearInterval(checkInterval);
-    }
-    
-    function showQRLogin() {
-      document.getElementById('qrSection').style.display = 'block';
-      document.getElementById('manualLogin').style.display = 'none';
-      document.getElementById('statusMessage').textContent = '';
-      generateQR();
-    }
-    
-    function generateQR() {
-      fetch("https://store-king-esport-production-9362.up.railway.app/api/admin/generate-qr", {
-        credentials: "include"
-      })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          qrToken = data.token;
-          document.getElementById('qrCode').innerHTML = '';
-          new QRCode(document.getElementById('qrCode'), {
-            text: data.token,
-            width: 200,
-            height: 200,
-            colorDark: "#000000",
-            colorLight: "#ffffff",
-            correctLevel: QRCode.CorrectLevel.H
-          });
-          
-          document.getElementById('statusMessage').textContent = 'انتظر الموافقة من المسؤول...';
-          startCheckingStatus();
-        }
-      });
-    }
-    
-    function startCheckingStatus() {
-      if (checkInterval) clearInterval(checkInterval);
-      
-      checkInterval = setInterval(() => {
-        fetch(`https://store-king-esport-production-9362.up.railway.app/api/admin/check-qr-status/${qrToken}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            if (data.status === 'approved') {
-              clearInterval(checkInterval);
-              window.location.href = "dashboard.html";
-            } else if (data.status === 'rejected') {
-              clearInterval(checkInterval);
-              document.getElementById('statusMessage').textContent = 'تم رفض طلب الدخول';
-            } else if (data.device_info) {
-              const device = JSON.parse(data.device_info);
-              document.getElementById('statusMessage').textContent = 
-                `تم طلب الدخول من جهاز: ${device.browser} (${device.os})`;
-            }
-          }
-        });
-      }, 2000);
-    }
-    
-    function registerDevice(token) {
-      const deviceInfo = {
-        browser: detectBrowser(),
-        os: detectOS(),
-        platform: navigator.platform
-      };
-      
-      fetch("https://store-king-esport-production-9362.up.railway.app/api/admin/register-device", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          token: qrToken,
-          device_info: deviceInfo
-        })
-      });
-    }
-    
-    function detectBrowser() {
-      const userAgent = navigator.userAgent;
-      if (userAgent.includes("Firefox")) return "Firefox";
-      if (userAgent.includes("SamsungBrowser")) return "Samsung Browser";
-      if (userAgent.includes("Opera") || userAgent.includes("OPR")) return "Opera";
-      if (userAgent.includes("Trident")) return "IE";
-      if (userAgent.includes("Edge")) return "Edge";
-      if (userAgent.includes("Chrome")) return "Chrome";
-      if (userAgent.includes("Safari")) return "Safari";
-      return "Unknown";
-    }
-    
-    function detectOS() {
-      const userAgent = navigator.userAgent;
-      if (userAgent.includes("Windows")) return "Windows";
-      if (userAgent.includes("Mac")) return "MacOS";
-      if (userAgent.includes("Linux")) return "Linux";
-      if (userAgent.includes("Android")) return "Android";
-      if (userAgent.includes("iOS") || userAgent.includes("iPhone") || userAgent.includes("iPad")) return "iOS";
-      return "Unknown";
-    }
-    
     document.getElementById("loginForm").addEventListener("submit", async function (e) {
       e.preventDefault();
       const username = document.getElementById("username").value;
@@ -208,9 +84,6 @@
         alert("Login failed: " + (data.message || "Invalid credentials"));
       }
     });
-
-    // بدء العملية عند تحميل الصفحة
-    generateQR();
   </script>
 </body>
 </html>

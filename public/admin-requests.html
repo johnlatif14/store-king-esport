@@ -56,6 +56,14 @@
       border-radius: 5px;
       cursor: pointer;
     }
+    input {
+      padding: 8px;
+      margin: 5px;
+      border-radius: 5px;
+      border: 1px solid #444;
+      background: #2a2a2a;
+      color: white;
+    }
   </style>
 </head>
 <body>
@@ -85,14 +93,18 @@
             div.className = 'request';
             div.innerHTML = `
               <p><strong>وقت الطلب:</strong> ${new Date(req.created_at).toLocaleString()}</p>
+              <p><strong>اسم المستخدم:</strong> ${req.username}</p>
               <div class="device-info">
                 <p><strong>معلومات الجهاز:</strong></p>
                 <p>المتصفح: ${device.browser || 'غير معروف'}</p>
                 <p>نظام التشغيل: ${device.os || 'غير معروف'}</p>
                 <p>المنصة: ${device.platform || 'غير معروف'}</p>
               </div>
-              <button class="approve" onclick="handleRequest('${req.token}', 'approve')">موافقة</button>
-              <button class="reject" onclick="handleRequest('${req.token}', 'reject')">رفض</button>
+              <div>
+                <input type="text" id="phone-${req.token}" placeholder="رقم الهاتف للتواصل (إذا تم الرفض)">
+                <button class="approve" onclick="handleRequest('${req.token}', 'approve')">موافقة</button>
+                <button class="reject" onclick="handleRequest('${req.token}', 'reject', 'phone-${req.token}')">رفض</button>
+              </div>
             `;
             container.appendChild(div);
           });
@@ -100,12 +112,14 @@
       });
     }
 
-    function handleRequest(token, action) {
+    function handleRequest(token, action, phoneInputId = null) {
+      const phone_number = phoneInputId ? document.getElementById(phoneInputId).value : null;
+      
       fetch("https://store-king-esport-production-9362.up.railway.app/api/admin/confirm-login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ token, action })
+        body: JSON.stringify({ token, action, phone_number })
       })
       .then(res => res.json())
       .then(data => {

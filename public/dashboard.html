@@ -18,42 +18,30 @@
       text-align: center;
     }
 
-    #ordersList, #inquiriesList, #suggestionsList {
+    #ordersList, #inquiriesList {
       max-width: 900px;
       margin: 20px auto;
     }
 
-    .order, .inquiry, .suggestion {
+    .order, .inquiry {
       background: #1e1e1e;
       padding: 15px;
       margin-bottom: 15px;
       border-radius: 8px;
       border: 1px solid #333;
-      transition: transform 0.3s, box-shadow 0.3s;
     }
 
-    .order:hover, .inquiry:hover, .suggestion:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-    }
-
-    .order p, .inquiry p, .suggestion p {
+    .order p, .inquiry p {
       margin: 5px 0;
     }
 
-    .order button, .inquiry button, .suggestion button {
+    .order button, .inquiry button {
       margin: 5px 5px 0 0;
       padding: 8px 15px;
       border: none;
       border-radius: 5px;
       cursor: pointer;
       font-weight: bold;
-      transition: all 0.3s;
-    }
-
-    .order button:hover, .inquiry button:hover, .suggestion button:hover {
-      opacity: 0.9;
-      transform: scale(1.05);
     }
 
     .paid {
@@ -73,11 +61,6 @@
 
     .reply-btn {
       background-color: #2196F3;
-      color: white;
-    }
-
-    .contact-btn {
-      background-color: #673AB7;
       color: white;
     }
 
@@ -109,7 +92,6 @@
       z-index: 1000;
       justify-content: center;
       align-items: center;
-      animation: fadeIn 0.3s;
     }
 
     .reply-content {
@@ -118,17 +100,6 @@
       border-radius: 8px;
       width: 80%;
       max-width: 500px;
-      transform: scale(0.9);
-      animation: scaleIn 0.3s forwards;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-
-    @keyframes scaleIn {
-      to { transform: scale(1); }
     }
 
     .reply-content h3 {
@@ -156,7 +127,6 @@
       display: flex;
       justify-content: center;
       margin: 20px 0;
-      flex-wrap: wrap;
     }
     
     .tab-btn {
@@ -166,20 +136,15 @@
       border: none;
       cursor: pointer;
       font-weight: bold;
-      transition: all 0.3s;
-      margin: 5px;
     }
     
     .tab-btn.active {
       background: orange;
       color: black;
-      transform: translateY(-3px);
-      box-shadow: 0 5px 15px rgba(255, 167, 38, 0.3);
     }
     
     .tab-content {
       display: none;
-      animation: fadeIn 0.5s;
     }
     
     .tab-content.active {
@@ -197,11 +162,6 @@
       cursor: pointer;
       border: 1px solid #444;
       border-radius: 5px;
-      transition: transform 0.3s;
-    }
-
-    .screenshot-thumbnail:hover {
-      transform: scale(1.1);
     }
     
     #screenshotModal {
@@ -214,67 +174,63 @@
       background: rgba(0,0,0,0.9);
       z-index: 1000;
       text-align: center;
-      animation: fadeIn 0.3s;
     }
     
     #screenshotModal img {
       max-width: 90%;
       max-height: 90%;
       margin-top: 5%;
-      border-radius: 8px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.5);
     }
-
     /* أنماط قسم الرسائل المباشرة */
-    .message-form {
-      max-width: 600px;
-      margin: 20px auto;
-      padding: 20px;
-      background: #1e1e1e;
-      border-radius: 8px;
-      border: 1px solid #333;
-    }
+.message-form {
+  max-width: 600px;
+  margin: 20px auto;
+  padding: 20px;
+  background: #1e1e1e;
+  border-radius: 8px;
+  border: 1px solid #333;
+}
 
-    .form-group {
-      margin-bottom: 15px;
-    }
+.form-group {
+  margin-bottom: 15px;
+}
 
-    .form-group label {
-      display: block;
-      margin-bottom: 5px;
-      font-weight: bold;
-    }
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
 
-    .form-group input,
-    .form-group textarea {
-      width: 100%;
-      padding: 10px;
-      background: #2a2a2a;
-      color: white;
-      border: 1px solid #444;
-      border-radius: 5px;
-    }
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 10px;
+  background: #2a2a2a;
+  color: white;
+  border: 1px solid #444;
+  border-radius: 5px;
+}
 
-    .form-group textarea {
-      min-height: 150px;
-      resize: vertical;
-    }
+.form-group textarea {
+  min-height: 150px;
+  resize: vertical;
+}
 
-    .send-btn {
-      width: 100%;
-      padding: 12px;
-      background-color: #2196F3;
-      color: white;
-      font-weight: bold;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      transition: background-color 0.3s;
-    }
+.send-btn {
+  width: 100%;
+  padding: 12px;
+  background-color: #2196F3;
+  color: white;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
 
-    .send-btn:hover {
-      background-color: #0b7dda;
-    }
+.send-btn:hover {
+  background-color: #0b7dda;
+}
   </style>
 </head>
 <body>
@@ -283,7 +239,6 @@
   <div class="tab-container">
     <button class="tab-btn active" onclick="openTab('ordersTab')">الطلبات</button>
     <button class="tab-btn" onclick="openTab('inquiriesTab')">الاستفسارات</button>
-    <button class="tab-btn" onclick="openTab('suggestionsTab')">الاقتراحات</button>
     <button class="tab-btn" onclick="openTab('messagesTab')">إرسال رسالة</button>
   </div>
   
@@ -296,30 +251,25 @@
     <h2>الاستفسارات</h2>
     <div id="inquiriesList"></div>
   </div>
-
-  <div id="suggestionsTab" class="tab-content">
-    <h2>الاقتراحات</h2>
-    <div id="suggestionsList"></div>
-  </div>
   
   <div id="messagesTab" class="tab-content">
-    <h2>إرسال رسالة مباشرة</h2>
-    <div class="message-form">
-      <div class="form-group">
-        <label for="clientEmail">بريد العميل:</label>
-        <input type="email" id="clientEmail" placeholder="أدخل البريد الإلكتروني للعميل">
-      </div>
-      <div class="form-group">
-        <label for="emailSubject">عنوان الرسالة:</label>
-        <input type="text" id="emailSubject" placeholder="أدخل عنوان الرسالة">
-      </div>
-      <div class="form-group">
-        <label for="emailMessage">نص الرسالة:</label>
-        <textarea id="emailMessage" placeholder="اكتب محتوى الرسالة هنا..."></textarea>
-      </div>
-      <button class="send-btn" onclick="sendDirectMessage()">إرسال الرسالة</button>
+  <h2>إرسال رسالة مباشرة</h2>
+  <div class="message-form">
+    <div class="form-group">
+      <label for="clientEmail">بريد العميل:</label>
+      <input type="email" id="clientEmail" placeholder="أدخل البريد الإلكتروني للعميل">
     </div>
+    <div class="form-group">
+      <label for="emailSubject">عنوان الرسالة:</label>
+      <input type="text" id="emailSubject" placeholder="أدخل عنوان الرسالة">
+    </div>
+    <div class="form-group">
+      <label for="emailMessage">نص الرسالة:</label>
+      <textarea id="emailMessage" placeholder="اكتب محتوى الرسالة هنا..."></textarea>
+    </div>
+    <button class="send-btn" onclick="sendDirectMessage()">إرسال الرسالة</button>
   </div>
+</div>
 
   <!-- Reply Modal -->
   <div id="replyModal" class="reply-modal">
@@ -350,10 +300,14 @@
           credentials: "include"
         });
         
-        if (!res.ok) throw new Error('Failed to fetch orders');
+        if (!res.ok) {
+          throw new Error('Failed to fetch orders');
+        }
         
         const data = await res.json();
-        if (!data.success) throw new Error(data.message || 'Failed to load orders');
+        if (!data.success) {
+          throw new Error(data.message || 'Failed to load orders');
+        }
         
         const orders = data.data;
         const container = document.getElementById("ordersList");
@@ -406,10 +360,14 @@
           credentials: "include"
         });
         
-        if (!res.ok) throw new Error('Failed to fetch inquiries');
+        if (!res.ok) {
+          throw new Error('Failed to fetch inquiries');
+        }
         
         const data = await res.json();
-        if (!data.success) throw new Error(data.message || 'Failed to load inquiries');
+        if (!data.success) {
+          throw new Error(data.message || 'Failed to load inquiries');
+        }
         
         const inquiries = data.data;
         const container = document.getElementById("inquiriesList");
@@ -440,72 +398,6 @@
       } catch (error) {
         console.error("Error loading inquiries:", error);
         alert("حدث خطأ أثناء تحميل الاستفسارات: " + error.message);
-      }
-    }
-
-    async function loadSuggestions() {
-      try {
-        const res = await fetch("https://store-king-esport-production-9362.up.railway.app/api/admin/suggestions", {
-          credentials: "include"
-        });
-        
-        if (!res.ok) throw new Error('Failed to fetch suggestions');
-        
-        const data = await res.json();
-        if (!data.success) throw new Error(data.message || 'Failed to load suggestions');
-        
-        const suggestions = data.data;
-        const container = document.getElementById("suggestionsList");
-        container.innerHTML = "";
-
-        if (!suggestions || !Array.isArray(suggestions)) {
-          throw new Error('Invalid suggestions data');
-        }
-
-        suggestions.forEach(suggestion => {
-          const div = document.createElement("div");
-          div.classList.add("suggestion");
-          div.innerHTML = `
-            <p><strong>الاسم:</strong> ${suggestion.name}</p>
-            <p><strong>طريقة التواصل:</strong> ${suggestion.contact}</p>
-            <p><strong>التاريخ:</strong> ${new Date(suggestion.created_at).toLocaleString()}</p>
-            <p><strong>الاقتراح:</strong> ${suggestion.message}</p>
-            <button class="contact-btn" onclick="contactSuggestion('${suggestion.contact.replace(/'/g, "\\'")}')">
-              ✉️ التواصل
-            </button>
-            <button class="delete-btn" onclick="deleteSuggestion(${suggestion.id})">🗑️ حذف</button>
-          `;
-          container.appendChild(div);
-        });
-      } catch (error) {
-        console.error("Error loading suggestions:", error);
-        alert("حدث خطأ أثناء تحميل الاقتراحات: " + error.message);
-      }
-    }
-
-    function contactSuggestion(contact) {
-      document.getElementById('clientEmail').value = contact.includes('@') ? contact : '';
-      document.getElementById('emailSubject').value = "رد على اقتراحك";
-      openTab('messagesTab');
-    }
-
-    async function deleteSuggestion(id) {
-      if (confirm("هل أنت متأكد من حذف هذا الاقتراح؟")) {
-        try {
-          const res = await fetch("https://store-king-esport-production-9362.up.railway.app/api/admin/delete-suggestion", {
-            method: "DELETE",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-            body: JSON.stringify({ id })
-          });
-          
-          if (!res.ok) throw new Error('Failed to delete suggestion');
-          
-          loadSuggestions();
-        } catch (error) {
-          console.error("Error deleting suggestion:", error);
-          alert("حدث خطأ أثناء حذف الاقتراح: " + error.message);
-        }
       }
     }
 
@@ -606,7 +498,9 @@
           body: JSON.stringify({ id, status })
         });
         
-        if (!res.ok) throw new Error('Failed to update status');
+        if (!res.ok) {
+          throw new Error('Failed to update status');
+        }
         
         loadOrders();
       } catch (error) {
@@ -625,7 +519,9 @@
             body: JSON.stringify({ id })
           });
           
-          if (!res.ok) throw new Error('Failed to delete order');
+          if (!res.ok) {
+            throw new Error('Failed to delete order');
+          }
           
           loadOrders();
         } catch (error) {
@@ -645,7 +541,9 @@
             body: JSON.stringify({ id })
           });
           
-          if (!res.ok) throw new Error('Failed to delete inquiry');
+          if (!res.ok) {
+            throw new Error('Failed to delete inquiry');
+          }
           
           loadInquiries();
         } catch (error) {
@@ -675,7 +573,9 @@
           credentials: "include"
         });
         
-        if (!res.ok) throw new Error('Failed to logout');
+        if (!res.ok) {
+          throw new Error('Failed to logout');
+        }
         
         window.location.href = "login.html";
       } catch (error) {
@@ -687,7 +587,6 @@
     // تحميل البيانات عند فتح الصفحة
     loadOrders();
     loadInquiries();
-    loadSuggestions();
   </script>
 </body>
 </html>

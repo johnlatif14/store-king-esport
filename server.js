@@ -7,7 +7,6 @@ const nodemailer = require("nodemailer");
 const path = require("path");
 const multer = require('multer');
 const fs = require('fs');
-const crypto = require('crypto');
 require('dotenv').config();
 
 const app = express();
@@ -82,19 +81,11 @@ db.serialize(() => {
     status TEXT DEFAULT 'قيد الانتظار',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
-
-  db.run(`CREATE TABLE IF NOT EXISTS qr_auth (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    token TEXT UNIQUE,
-    device_info TEXT,
-    status TEXT DEFAULT 'pending',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  )`);
 });
 
 // إعداد البريد الإلكتروني
 const transporter = nodemailer.createTransport({
-  service: process.env.SMTP_SERVICE || 'gmail',
+  service: 'gmail',
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
@@ -115,13 +106,6 @@ app.get("/dashboard", (req, res) => {
     return res.redirect('/login');
   }
   res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
-});
-
-app.get("/admin-requests", (req, res) => {
-  if (!req.session.admin) {
-    return res.redirect('/login');
-  }
-  res.sendFile(path.join(__dirname, 'public', 'admin-requests.html'));
 });
 
 // API Routes
@@ -348,94 +332,6 @@ app.post("/api/admin/send-message", async (req, res) => {
     console.error("Error sending message:", error);
     res.status(500).json({ success: false, message: "فشل إرسال الرسالة" });
   }
-});
-
-// QR Auth Routes
-app.get("/api/admin/generate-qr", (req, res) => {
-  if (!req.session.admin) return res.status(403).json({ success: false, message: "غير مصرح" });
-  
-  const token = crypto.randomBytes(32).toString('hex');
-  db.run(
-    "INSERT INTO qr_auth (token) VALUES (?)",
-    [token],
-    function(err) {
-      if (err) {
-        console.error(err);
-        return res.status(500).json({ success: false, message: "خطأ في قاعدة البيانات" });
-      }
-      res.json({ success: true, token });
-    }
-  );
-});
-
-app.get("/api/admin/check-qr-status/:token", (req, res) => {
-  const { token } = req.params;
-  db.get(
-    "SELECT status, device_info FROM qr_auth WHERE token = ?",
-    [token],
-    (err, row) => {
-      if (err || !row) {
-        return res.status(404).json({ success: false, message: "Token not found" });
-      }
-      res.json({ success: true, status: row.status, device_info: row.device_info });
-    }
-  );
-});
-
-app.post("/api/admin/confirm-login", (req, res) => {
-  if (!req.session.admin) return res.status(403).json({ success: false, message: "غير مصرح" });
-  
-  const { token, action } = req.body;
-  if (!token || !action) {
-    return res.status(400).json({ success: false, message: "Token and action are required" });
-  }
-
-  const status = action === 'approve' ? 'approved' : 'rejected';
-  db.run(
-    "UPDATE qr_auth SET status = ? WHERE token = ?",
-    [status, token],
-    function(err) {
-      if (err) {
-        console.error(err);
-        return res.status(500).json({ success: false, message: "حدث خطأ أثناء التحديث" });
-      }
-      res.json({ success: true });
-    }
-  );
-});
-
-app.post("/api/admin/register-device", (req, res) => {
-  const { token, device_info } = req.body;
-  if (!token || !device_info) {
-    return res.status(400).json({ success: false, message: "Token and device info are required" });
-  }
-
-  db.run(
-    "UPDATE qr_auth SET device_info = ?, status = 'waiting' WHERE token = ?",
-    [JSON.stringify(device_info), token],
-    function(err) {
-      if (err) {
-        console.error(err);
-        return res.status(500).json({ success: false, message: "حدث خطأ أثناء التحديث" });
-      }
-      res.json({ success: true });
-    }
-  );
-});
-
-app.get("/api/admin/pending-requests", (req, res) => {
-  if (!req.session.admin) return res.status(403).json({ success: false, message: "غير مصرح" });
-  
-  db.all(
-    "SELECT * FROM qr_auth WHERE status = 'waiting' ORDER BY created_at DESC",
-    (err, rows) => {
-      if (err) {
-        console.error(err);
-        return res.status(500).json({ success: false, message: "خطأ في قاعدة البيانات" });
-      }
-      res.json({ success: true, requests: rows });
-    }
-  );
 });
 
 const PORT = process.env.PORT || 3000;

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>طلبات الدخول</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Cairo', sans-serif;
+      margin: 0;
+      background-color: #121212;
+      color: #fff;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      color: orange;
+    }
+    .request {
+      background: #1e1e1e;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 8px;
+      border: 1px solid #333;
+    }
+    .device-info {
+      margin-top: 10px;
+      padding: 10px;
+      background: #2a2a2a;
+      border-radius: 5px;
+    }
+    button {
+      margin: 5px;
+      padding: 8px 15px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .approve {
+      background: #4CAF50;
+      color: white;
+    }
+    .reject {
+      background: #f44336;
+      color: white;
+    }
+    .logout-btn {
+      display: block;
+      margin: 20px auto;
+      background-color: orange;
+      color: black;
+      font-weight: bold;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>طلبات الدخول المعلقة</h1>
+  <div id="requestsList"></div>
+  <button class="logout-btn" onclick="logout()">تسجيل الخروج</button>
+
+  <script>
+    function loadRequests() {
+      fetch("https://store-king-esport-production-9362.up.railway.app/api/admin/pending-requests", {
+        credentials: "include"
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          const container = document.getElementById('requestsList');
+          container.innerHTML = '';
+          
+          if (data.requests.length === 0) {
+            container.innerHTML = '<p style="text-align: center;">لا توجد طلبات دخول معلقة</p>';
+            return;
+          }
+          
+          data.requests.forEach(req => {
+            const device = JSON.parse(req.device_info || '{}');
+            const div = document.createElement('div');
+            div.className = 'request';
+            div.innerHTML = `
+              <p><strong>وقت الطلب:</strong> ${new Date(req.created_at).toLocaleString()}</p>
+              <div class="device-info">
+                <p><strong>معلومات الجهاز:</strong></p>
+                <p>المتصفح: ${device.browser || 'غير معروف'}</p>
+                <p>نظام التشغيل: ${device.os || 'غير معروف'}</p>
+                <p>المنصة: ${device.platform || 'غير معروف'}</p>
+              </div>
+              <button class="approve" onclick="handleRequest('${req.token}', 'approve')">موافقة</button>
+              <button class="reject" onclick="handleRequest('${req.token}', 'reject')">رفض</button>
+            `;
+            container.appendChild(div);
+          });
+        }
+      });
+    }
+
+    function handleRequest(token, action) {
+      fetch("https://store-king-esport-production-9362.up.railway.app/api/admin/confirm-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ token, action })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          loadRequests();
+        }
+      });
+    }
+
+    function logout() {
+      fetch("https://store-king-esport-production-9362.up.railway.app/api/admin/logout", { 
+        method: "POST",
+        credentials: "include"
+      })
+      .then(() => {
+        window.location.href = "login.html";
+      });
+    }
+
+    // تحميل الطلبات كل 5 ثواني
+    loadRequests();
+    setInterval(loadRequests, 5000);
+  </script>
+</body>
+</html>

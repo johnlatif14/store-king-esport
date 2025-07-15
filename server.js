@@ -31,7 +31,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // إعداد الجلسة
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'your-secret-key',
+  secret: process.env.SESSION_SECRET || 'default-secret-key', // تم التحديث لاستخدام SESSION_SECRET من .env
   resave: false,
   saveUninitialized: true,
   cookie: { 
@@ -79,6 +79,14 @@ db.serialize(() => {
     email TEXT,
     message TEXT,
     status TEXT DEFAULT 'قيد الانتظار',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS suggestions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT,
+    contact TEXT,
+    message TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
 });
@@ -170,6 +178,44 @@ app.post("/api/inquiry", async (req, res) => {
   }
 });
 
+app.post("/api/suggestion", async (req, res) => {
+  const { name, contact, message } = req.body;
+  
+  if (!name || !contact || !message) {
+    return res.status(400).json({ success: false, message: "جميع الحقول مطلوبة" });
+  }
+
+  try {
+    db.run(
+      "INSERT INTO suggestions (name, contact, message) VALUES (?, ?, ?)",
+      [name, contact, message],
+      async function(err) {
+        if (err) return res.status(500).json({ success: false, message: "خطأ في قاعدة البيانات" });
+        
+        await transporter.sendMail({
+          from: `"اقتراح جديد" <${process.env.SMTP_USER}>`,
+          to: process.env.SMTP_USER,
+          subject: "اقتراح جديد للموقع",
+          html: `
+            <div dir="rtl">
+              <h2 style="color: #ffa726;">اقتراح جديد</h2>
+              <p><strong>الاسم:</strong> ${name}</p>
+              <p><strong>طريقة التواصل:</strong> ${contact}</p>
+              <p><strong>الاقتراح:</strong></p>
+              <p style="background: #f5f5f5; padding: 10px; border-right: 3px solid #ffa726;">${message}</p>
+            </div>
+          `,
+        });
+        
+        res.json({ success: true });
+      }
+    );
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).json({ success: false, message: "فشل إرسال الاقتراح" });
+  }
+});
+
 // Admin Routes
 app.post('/api/admin/login', (req, res) => {
   const { username, password } = req.body;
@@ -205,6 +251,18 @@ app.get("/api/admin/inquiries", (req, res) => {
   if (!req.session.admin) return res.status(403).json({ success: false, message: "غير مصرح" });
   
   db.all("SELECT * FROM inquiries ORDER BY created_at DESC", (err, rows) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ success: false, message: "خطأ في قاعدة البيانات" });
+    }
+    res.json({ success: true, data: rows });
+  });
+});
+
+app.get("/api/admin/suggestions", (req, res) => {
+  if (!req.session.admin) return res.status(403).json({ success: false, message: "غير مصرح" });
+  
+  db.all("SELECT * FROM suggestions ORDER BY created_at DESC", (err, rows) => {
     if (err) {
       console.error(err);
       return res.status(500).json({ success: false, message: "خطأ في قاعدة البيانات" });
@@ -260,6 +318,23 @@ app.delete("/api/admin/delete-inquiry", (req, res) => {
   }
 
   db.run("DELETE FROM inquiries WHERE id = ?", [id], function(err) {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ success: false, message: "حدث خطأ أثناء الحذف" });
+    }
+    res.json({ success: true });
+  });
+});
+
+app.delete("/api/admin/delete-suggestion", (req, res) => {
+  if (!req.session.admin) return res.status(403).json({ success: false, message: "غير مصرح" });
+  
+  const { id } = req.body;
+  if (!id) {
+    return res.status(400).json({ success: false, message: "معرّف الاقتراح مطلوب" });
+  }
+
+  db.run("DELETE FROM suggestions WHERE id = ?", [id], function(err) {
     if (err) {
       console.error(err);
       return res.status(500).json({ success: false, message: "حدث خطأ أثناء الحذف" });
